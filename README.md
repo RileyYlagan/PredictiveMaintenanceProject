@@ -15,7 +15,8 @@ machine or equipment so that maintenance can be done prior to machine
 failure. The strategy of predictive maintenance aims to allow for
 maintenance to be conveniently scheduled and prevent unexpected failure
 of equipment. This process reduces costs as maintenance is done only
-when needed.  
+when needed.
+
 This project uses a synthetics, yet realistic dataset that details a
 machine’s conditions, whether a machine failed, and if so, how it
 failed. The goals of this project are:  

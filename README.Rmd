@@ -17,6 +17,7 @@ Kushagr Bhatia, Rohit Dinesh, Harshit Gupta, Revath Sankar, and Riley Ylagan
 
 ## Project Description:
 Predictive maintenance is a technique that uses machine learning and data science tools in order to detect issues within an operation's machine or equipment so that maintenance can be done prior to machine failure. The strategy of predictive maintenance aims to allow for maintenance to be conveniently scheduled and prevent unexpected failure of equipment. This process reduces costs as maintenance is done only when needed.  
+  
 This project uses a synthetics, yet realistic dataset that details a machine's conditions, whether a machine failed, and if so, how it failed. The goals of this project are:  
 - To be able to predict whether a machine failure occurs or not given the machine's conditions  
 - If a machine fails, classify further which failure mode caused the machine to fail
