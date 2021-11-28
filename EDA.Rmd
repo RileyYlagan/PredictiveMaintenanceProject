@@ -1,0 +1,112 @@
+---
+title: "Project Exploratory Data Analysis"
+author: "Riley Ylagan"
+date: "11/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction:
+First we import the dataset and the necessary libraries we will use to manipulate, change, and visualize data.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+data <- read.csv(file="/stor/home/rry235/PredictiveMaintenanceProject/data/ai4i2020.csv") %>% rename(UID=UDI)
+# Typo in original csv; changed UDI to UID
+head(data)
+glimpse(data)
+nrow(data)
+ncol(data)
+```
+### Understanding the dataset
+The dataset is composed of 10,000 observations of 14 variables. Each observation represents a process being done on a particular machine and its tool. Each process on this machine has its working conditions, if the processes failed or not, and if it did what type of failure mode(s) caused it to fail.
+
+
+## Cleaning the dataset
+Next we clean the dataset by removing NA or null values, duplicate data, and tidying/reshaping as needed. From looking at the head of the data in the introduction, we can see that most of the data is already tidy. It is possible, for sake of presentation, to combine the failure modes into one row, instead of having each failure mode be its own column. However, a process that fails could have multiple failure modes. Our goal is simply to see whether or not a machine failure occurs from the conditions. In this dataset, it is not apparent to the machine learning method which failure mode caused the failure to occur.
+NB : I completely misunderstood the dataset but understand it now.
+```{r}
+# remove any NA and remove duplicated UID
+data <- data %>% na.omit %>% distinct()
+# Maybe try putting the last few rows into one?
+clean_data <- data %>% pivot_longer(10:14,names_to="Failure.type",values_to="value") 
+clean_data$Failure.type[clean_data$Machine.failure == 0] = "NONE"
+clean_data_final <- clean_data[!(clean_data$Machine.failure==1 & clean_data$value == 0 ),] %>% select(!value) %>% distinct
+# Clean data set tidies up the last row, possibly makes it easier to visualize to view patterns/stuff
+# Similar to the Galaxy Dataset in the last HW, each process now has a categorical variable for what type of failure if one occured
+# For processes in which multiple failure modes occur, we seperate them into separate rows with the same process parameters but different failure modes so the machine learning method can see the process parameters for each failure separately.
+```
+
+## Looking at our data
+```{r}
+data %>% summarize(Total.Failed = sum(Machine.failure),TWF=sum(TWF),HDF = sum(HDF),PWF=sum(PWF),OSF=sum(OSF),RNF=sum(RNF)) %>% pivot_longer(1:6,names_to="Failure_mode",values_to="Frequency") %>% ggplot(aes(x=reorder(Failure_mode,-Frequency),y=Frequency,fill=Failure_mode)) +geom_bar(stat = "identity") + geom_text(aes(label=Frequency), position=position_dodge(width=0.9), vjust=-0.25) + theme_minimal() + xlab("Types of Failure Modes")
+```
+
+Here we can see the amount of times a certain failure mode occurs. If you add up the occurences of each failure mode within the dataset, we can see that it actually exceeds the total amount of processes failed (373 vs. 339). This is because multiple failure modes can occur and cause a process to fail.
+
+Now, let's try to observe any correlations in the data and make hypotheseses based on the information.
+```{r}
+data %>%  filter(Machine.failure==1) %>% select(!c(Machine.failure,UID,TWF,RNF,PWF,HDF,OSF)) %>%select_if(is.numeric) %>% cor %>% as.data.frame %>% rownames_to_column %>% pivot_longer(-1)%>% ggplot(aes(rowname,name,fill=value)) + geom_tile() + geom_text(aes(label=round(value,2))) + xlab("") + ylab("") + coord_fixed(ratio=1/2) + scale_fill_gradient2()+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+The correlation matrix doesn't seem to make sense here as its a classification model.
+
+Let's try to find relationships between the process conditions and the types of failure modes. Here we will look just at the times a process failed and look at the type of failure types to see if any relation between the process conditions and the failure modes.
+First, we start off by plotting process parameters against each other to see if they affect the type of failure mode in any way. For this section, we can practically disregard the random failures (RNF) mode because it is explicitly not affected by any process parameters. 
+```{r}
+clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Process.temperature..K.,y=Air.temperature..K.)) + geom_point(aes(color=Failure.type))
+
+clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Torque..Nm.,y=Rotational.speed..rpm.)) + geom_point(aes(color=Failure.type))
+```
+  
+From the first plot, we can ask make a few guesses about the data. Since the HDF failure type seems to be within a cluster range, we can make a guess and say that HDF is in some way affected by the air temperature and the process temperature.
+From the second plot, we can see that PWF occurs at the ends of the plot, meaning that the product of the two process paramaters influence the occurence of a PWF.
+```{r}
+clean_data_final%>% filter(!(Failure.type=="NONE"))  %>% ggplot(aes(x=Process.temperature..K.-Air.temperature..K.,y=Rotational.speed..rpm.)) + geom_point(aes(color=Failure.type))+xlab("Process - Air Temperature (K)") + ylab("Rotational Speed (rpm)") + ggtitle("Difference between Process and Air Temperature vs. Rotational Speed")
+```
+  
+This plot shows that the OSF,PWF,RNF, and TWF failure modes aren't particularly influenced by the difference in temperature and the rotational speed because each of these failure modes appears spread out in the plot. However, we can see that the HDF failure mode is centered around a particular area where the difference in temperature is $/approx$ 8-9 and the rotational speed is $< \approx$ 1500 rpm.
+```{r}
+clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Torque..Nm.,y=Rotational.speed..rpm.)) + geom_point(aes(color=Failure.type))+ xlab("Torque (Nm)") + ylab("Rotational Speed (rpm)") + ggtitle("Tool wear of each process vs. Torque")
+
+clean_data_final %>% filter(Failure.type=="PWF") %>% mutate(product=Rotational.speed..rpm.*Torque..Nm.*2*pi/60) %>% ggplot(aes(x=product))+geom_histogram(color="black", fill="light blue") + theme_minimal() + xlab("Product of Torque and Rotational Speed = Power (Watts)") + ylab("Count") + ggtitle("Distribution of Process Power for times when there was a Power Failure (PWF)")
+```
+  
+From the distribution we can see that the power of each process that has a power failure, calculated from the prodcut of Torque and Rotaional speed in $\frac{rad}{s}$, affects the occurence of a power failure. It appears that power failures occur when either the power is too low (i.e $< \approx 3500$ W) or too high (i.e $> \approx 9000$ W)
+```{r}
+clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Tool.wear..min.,y=Torque..Nm.)) + geom_point(aes(color=Failure.type)) + xlab("Process Tool Wear (min)") + ylab("Torque (Nm)") + ggtitle("Tool wear of each process vs. Torque")
+```
+  
+Here we can see that for PWF, HDF, and RNF aren't generally centered around a certain amount of tool wear time. However, The TWF and OSF failure modes appear to be concentrated around higher tool wear values. Let's take a look at the average tool wear value of each time a failure mode occurs.
+
+```{r}
+clean_data_final %>% filter(!(Failure.type=="NONE") & !(Failure.type=="RNF")) %>% ggplot(aes(x=reorder(Failure.type,-Tool.wear..min.),y=Tool.wear..min.,fill=Failure.type)) + geom_bar(stat = "summary", fun= "mean") + theme_minimal() + xlab("Failure Mode") + ylab("Average Tool Wear (min)") + ggtitle("Average Tool Wear of Every Failure mode")
+```
+  
+Here we see the average tool wear of every failure mode except for the random failure. Since the random failure is random, we can assume that it is not affected by a particular condition variable. We can see that the tool wear failure and the overstrain failure modes have higher average tool wear compared to the other two failure modes. From these graphs, we can see that the occurence of TWF and OSF failure modes is at least partially dependent on the tool wear. From understanding the dataset, we actually know that tool wear failure occurs when the tool wear time is high and this case the tool is fixed and the tool wear resets. Now let's try to understand when an overstrain failure occurs.
+
+Let's look at the distribution of the product of tool wear and torque for processes that fail due to overstraining.
+```{r}
+clean_data_final %>% filter(Failure.type=="OSF") %>% mutate(product=Tool.wear..min.*Torque..Nm.) %>% ggplot(aes(x=product,fill=Type))+geom_histogram() +facet_wrap(~Type)+theme_minimal() + xlab("Product of Torque and Tool Wear (min*Nm)") + ylab("Count") + ggtitle("Distribution of the product of tool wear and torque for times when there was OSF") + theme(axis.text.x = element_text(angle = 90))
+```
+  
+From this distribution, the product of torque and tool wear for each type of product (L,M, or H) for each process where an overstrain failure occured. We can see that for a product of type $L$, the process fails when this value is atleast 11,000; for a product of type $H$, the process fails when this value is atleast 13,000; and for a product of type $M$, the process fails when this value is atleast 12,000.
+
+## Conclusions from Exploratory Data Analysis
+From the analysis done above, we can come to a few conclusions about the data:
+
+* Machine failures occur when one of the five failure modes of TWF, HDF, PWF, OSF, and RNF occurs
+* Other than RNF, these five failure modes occur with dependence on the process parameters (i.e air temperature, process temperature, rotational speed, torque, and tool wear.). For example, a failure occurs when the power of a process is too high or too low.
+* From analysis, we can see what each failure mode is influenced by:
+  + Tool wear failure (TWF) occurs only when the tool wear is at a certain value.
+  + Heat dissapation failure (HDF) occurs according to the difference between the air and process temperature and also the rotational speed.
+  + Power failure (PWF) occurs when a process' power is too high or too low.
+  + Overstrain failure (OSF) occurs when the product of torque and tool wear exceeds a certain amount dependent on the processed product's type (L,M, or H).
+  + Random failures (RNF) can occur regardless of process parameters.
+
+In order to predict whether a machine process will fail, we can use this data to set up a probabilistic classification problem and use a classifier model such as a decision tree to predict whether a machine process will fail given the process parameters.
+
