@@ -33,7 +33,7 @@ Important Links:
     As well as in the file `ai4i2020.csv` in this repository.
 -   The link to the description of the dataset can be found
     [here](https://archive.ics.uci.edu/ml/datasets/AI4I+2020+Predictive+Maintenance+Dataset).
--   A link to the project presentation can be found
+-   The link to the project presentation can be found
     [here](https://docs.google.com/presentation/d/1b0eb4O3dREzGtBQ2ucuFJe4S3VwxrFEOKYYIBckQSBQ/edit?usp=sharing).
 
 Dataset Information
