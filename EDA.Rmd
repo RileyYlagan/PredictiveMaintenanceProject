@@ -16,7 +16,7 @@ First we import the dataset and the necessary libraries we will use to manipulat
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
-data <- read.csv(file="/stor/home/rry235/PredictiveMaintenanceProject/data/ai4i2020.csv") %>% rename(UID=UDI)
+data <- read.csv(file="./data/ai4i2020.csv") %>% rename(UID=UDI)
 # Typo in original csv; changed UDI to UID
 head(data)
 glimpse(data)
@@ -40,6 +40,8 @@ clean_data_final <- clean_data[!(clean_data$Machine.failure==1 & clean_data$valu
 # Clean data set tidies up the last row, possibly makes it easier to visualize to view patterns/stuff
 # Similar to the Galaxy Dataset in the last HW, each process now has a categorical variable for what type of failure if one occured
 # For processes in which multiple failure modes occur, we seperate them into separate rows with the same process parameters but different failure modes so the machine learning method can see the process parameters for each failure separately.
+# Write clean csv to data
+write.csv(clean_data_final,"./data/clean_data_final.csv", row.names = FALSE)
 ```
 
 ## Looking at our data
