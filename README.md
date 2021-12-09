@@ -35,6 +35,8 @@ Important Links:
     [here](https://archive.ics.uci.edu/ml/datasets/AI4I+2020+Predictive+Maintenance+Dataset).
 -   The link to the project presentation can be found
     [here](https://docs.google.com/presentation/d/1b0eb4O3dREzGtBQ2ucuFJe4S3VwxrFEOKYYIBckQSBQ/edit?usp=sharing).
+-   The link to our interactive WEBSITE!
+    [here] (https://www.kaggle.com/revathsankar/predictive-machine-failure/notebook)
 
 Dataset Information
 -------------------
