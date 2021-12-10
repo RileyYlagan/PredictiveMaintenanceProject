@@ -17,7 +17,7 @@ maintenance to be conveniently scheduled and prevent unexpected failure
 of equipment. This process reduces costs as maintenance is done only
 when needed.
 
-This project uses a synthetics, yet realistic dataset that details a
+This project uses a synthetics, yet realistic data set that details a
 machine’s process parameters, whether a machine failed, and if so, how
 it failed. The goals of this project are:  
 - To be able to predict whether a machine failure occurs or not given
@@ -47,6 +47,14 @@ data points stored as rows with 14 features in columns. Each row
 represents a single process ran on a machine. The first 3 variables show
 the process identifiers, the next 5 variables are process parameters,
 and the last 6 variables represent the failure label and failure types.
+
+Navigating This Repo
+--------------------
+
+Both the original and the cleaned data set can be found in the folder
+labeled `data`. The code for exploratory analysis and modelling can be
+found in the folder labeled `code`. The final report is under the name
+`SDS_322E_Final_Project_Report.pdf`.
 
 References:
 -----------
