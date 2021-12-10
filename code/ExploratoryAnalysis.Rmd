@@ -16,7 +16,7 @@ First we import the dataset and the necessary libraries we will use to manipulat
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
-data <- read.csv(file="./data/ai4i2020.csv") %>% rename(UID=UDI)
+data <- read.csv(file="../data/ai4i2020.csv")
 # Typo in original csv; changed UDI to UID
 head(data)
 glimpse(data)
@@ -29,7 +29,6 @@ The dataset is composed of 10,000 observations of 14 variables. Each observation
 
 ## Cleaning the dataset
 Next we clean the dataset by removing NA or null values, duplicate data, and tidying/reshaping as needed. From looking at the head of the data in the introduction, we can see that most of the data is already tidy. It is possible, for sake of presentation, to combine the failure modes into one row, instead of having each failure mode be its own column. However, a process that fails could have multiple failure modes. Our goal is simply to see whether or not a machine failure occurs from the conditions. In this dataset, it is not apparent to the machine learning method which failure mode caused the failure to occur.
-NB : I completely misunderstood the dataset but understand it now.
 ```{r}
 # remove any NA and remove duplicated UID
 data <- data %>% na.omit %>% distinct()
@@ -42,7 +41,7 @@ clean_data_final <- clean_data[!(clean_data$Machine.failure==1 & clean_data$valu
 # For processes in which multiple failure modes occur, we seperate them into separate rows with the same process parameters but different failure modes so the machine learning method can see the process parameters for each failure separately.
 # Write clean csv to data
 head(clean_data_final)
-write.csv(clean_data_final,"./data/clean_data_final.csv", row.names = FALSE)
+write.csv(clean_data_final,"../data/clean_data_final.csv", row.names = FALSE)
 ```
 
 ## Looking at our data
