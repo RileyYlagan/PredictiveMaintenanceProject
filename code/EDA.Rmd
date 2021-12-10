@@ -41,15 +41,18 @@ clean_data_final <- clean_data[!(clean_data$Machine.failure==1 & clean_data$valu
 # Similar to the Galaxy Dataset in the last HW, each process now has a categorical variable for what type of failure if one occured
 # For processes in which multiple failure modes occur, we seperate them into separate rows with the same process parameters but different failure modes so the machine learning method can see the process parameters for each failure separately.
 # Write clean csv to data
+head(clean_data_final)
 write.csv(clean_data_final,"./data/clean_data_final.csv", row.names = FALSE)
 ```
 
 ## Looking at our data
 ```{r}
-data %>% summarize(Total.Failed = sum(Machine.failure),TWF=sum(TWF),HDF = sum(HDF),PWF=sum(PWF),OSF=sum(OSF),RNF=sum(RNF)) %>% pivot_longer(1:6,names_to="Failure_mode",values_to="Frequency") %>% ggplot(aes(x=reorder(Failure_mode,-Frequency),y=Frequency,fill=Failure_mode)) +geom_bar(stat = "identity") + geom_text(aes(label=Frequency), position=position_dodge(width=0.9), vjust=-0.25) + theme_minimal() + xlab("Types of Failure Modes")
+data %>% summarize(Total.Failed = sum(Machine.failure),TWF=sum(TWF),HDF = sum(HDF),PWF=sum(PWF),OSF=sum(OSF),RNF=sum(RNF)) %>% pivot_longer(1:6,names_to="Failure_mode",values_to="Frequency") %>% ggplot(aes(x=reorder(Failure_mode,-Frequency),y=Frequency,fill=Failure_mode)) +geom_bar(stat = "identity") + geom_text(aes(label=Frequency), position=position_dodge(width=0.9), vjust=-0.25) + theme_minimal() + xlab("Types of Failure Modes") + ggtitle("Occurence of Failure Types and Total Failures")
+(data %>% filter(Machine.failure == 1) %>% nrow)*100/(data %>% nrow)
 ```
 
 Here we can see the amount of times a certain failure mode occurs. If you add up the occurences of each failure mode within the dataset, we can see that it actually exceeds the total amount of processes failed (373 vs. 339). This is because multiple failure modes can occur and cause a process to fail.
+We can also see that, in this dataset, only 3.39\% of processes fail. This imbalance within the dataset could prove issues when a classification model is ran. 
 
 Now, let's try to observe any correlations in the data and make hypotheseses based on the information.
 ```{r}
@@ -59,10 +62,12 @@ The correlation matrix doesn't seem to make sense here as its a classification m
 
 Let's try to find relationships between the process conditions and the types of failure modes. Here we will look just at the times a process failed and look at the type of failure types to see if any relation between the process conditions and the failure modes.
 First, we start off by plotting process parameters against each other to see if they affect the type of failure mode in any way. For this section, we can practically disregard the random failures (RNF) mode because it is explicitly not affected by any process parameters. 
-```{r}
-clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Process.temperature..K.,y=Air.temperature..K.)) + geom_point(aes(color=Failure.type))
 
-clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Torque..Nm.,y=Rotational.speed..rpm.)) + geom_point(aes(color=Failure.type))
+NOTE: Instead of doing some form of linear fitting with `geom_smooth` would it be better to use some form of clustering?
+```{r}
+clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Process.temperature..K.,y=Air.temperature..K.,color=Failure.type)) + geom_point() + xlab("Process Temperature(K)") + ylab("Air Temperature(K)") + ggtitle("Air Process vs. Process Temperature for Each Failure Type")
+# + geom_smooth(method = "glm", formula = y~x, method.args = list(family = gaussian(link = 'log')))
+clean_data_final %>% filter(!(Failure.type=="NONE")) %>% ggplot(aes(x=Torque..Nm.,y=Rotational.speed..rpm.,color=Failure.type)) + geom_point() + xlab("Torque(Nm)") + ylab("Rotational Speed(rpm)") + ggtitle("Torque vs. Rotational Speed for Each Failure Type")
 ```
   
 From the first plot, we can ask make a few guesses about the data. Since the HDF failure type seems to be within a cluster range, we can make a guess and say that HDF is in some way affected by the air temperature and the process temperature.
@@ -93,7 +98,9 @@ Here we see the average tool wear of every failure mode except for the random fa
 
 Let's look at the distribution of the product of tool wear and torque for processes that fail due to overstraining.
 ```{r}
-clean_data_final %>% filter(Failure.type=="OSF") %>% mutate(product=Tool.wear..min.*Torque..Nm.) %>% ggplot(aes(x=product,fill=Type))+geom_histogram() +facet_wrap(~Type)+theme_minimal() + xlab("Product of Torque and Tool Wear (min*Nm)") + ylab("Count") + ggtitle("Distribution of the product of tool wear and torque for times when there was OSF") + theme(axis.text.x = element_text(angle = 90))
+clean_data_final %>% filter(Failure.type=="OSF" | Failure.type =="NONE") %>% mutate(product=Tool.wear..min.*Torque..Nm.) %>% ggplot(aes(x=product,fill=Failure.type)) + geom_histogram() + facet_wrap(~Type) + theme_minimal() + xlab("Product of Torque and Tool Wear (min*Nm)") + ylab("Count") + ggtitle("Distribution of the product of tool wear and torque for NONE and OSF") + theme(axis.text.x = element_text(angle = 90))
+
+clean_data_final %>% filter(Failure.type=="OSF") %>% mutate(product=Tool.wear..min.*Torque..Nm.) %>% ggplot(aes(x=product,fill=Type)) + geom_histogram() + facet_wrap(~Type) + theme_minimal() + xlab("Product of Torque and Tool Wear (min*Nm)") + ylab("Count") + ggtitle("Distribution of the product of tool wear and torque for times when there was OSF") + theme(axis.text.x = element_text(angle = 90))
 ```
   
 From this distribution, the product of torque and tool wear for each type of product (L,M, or H) for each process where an overstrain failure occured. We can see that for a product of type $L$, the process fails when this value is atleast 11,000; for a product of type $H$, the process fails when this value is atleast 13,000; and for a product of type $M$, the process fails when this value is atleast 12,000.
