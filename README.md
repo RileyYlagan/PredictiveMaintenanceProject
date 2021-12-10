@@ -45,7 +45,7 @@ The dataset used is a “synthetic dataset that reflects real predictive
 maintenance encountered in industry”<sup>1</sup>. It consists of 10,000
 data points stored as rows with 14 features in columns. Each row
 represents a single process ran on a machine. The first 3 variables show
-the process identifiers, the next 5 varaibles are process parameters,
+the process identifiers, the next 5 variables are process parameters,
 and the last 6 variables represent the failure label and failure types.
 
 References:
