@@ -37,7 +37,9 @@ Important Links:
     [here](https://docs.google.com/presentation/d/1b0eb4O3dREzGtBQ2ucuFJe4S3VwxrFEOKYYIBckQSBQ/edit?usp=sharing).
 -   The link to our interactive WEBSITE!
     [here](https://www.kaggle.com/revathsankar/predictive-machine-failure/notebook).
-    
+ 
+Website with conclustion https://www.kaggle.com/kushagrbhatia/notebook7f953b4c27
+
 Dataset Information
 -------------------
 
